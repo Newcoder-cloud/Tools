@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image to PDF Converter</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    /* General Styles */
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f4f4f9;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background: #fff;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      color: #333;
+      margin-bottom: 1.5rem;
+    }
+
+    .upload-area {
+      border: 2px dashed #ccc;
+      border-radius: 10px;
+      padding: 1.5rem;
+      background: #f9f9f9;
+      cursor: pointer;
+      transition: border-color 0.3s ease;
+    }
+
+    .upload-area:hover {
+      border-color: #007bff;
+    }
+
+    .upload-area p {
+      margin: 0;
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    #preview {
+      max-width: 100%;
+      height: auto;
+      margin-top: 1rem;
+      border-radius: 5px;
+      display: none;
+    }
+
+    button {
+      background: #007bff;
+      color: #fff;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 1.5rem;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    .success-message {
+      color: #28a745;
+      font-size: 0.9rem;
+      margin-top: 1rem;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Image to PDF Converter</h1>
+    <div class="upload-area" id="uploadArea">
+      <p>Drag & drop an image or click to upload</p>
+      <input type="file" id="imageInput" accept="image/*" style="display: none;">
+    </div>
+    <img id="preview" src="#" alt="Image Preview">
+    <button onclick="convertToPDF()">Convert to PDF</button>
+    <p class="success-message" id="successMessage">PDF downloaded successfully!</p>
+  </div>
+
+  <script>
+    const { jsPDF } = window.jspdf;
+
+    // Drag-and-drop and file input functionality
+    const uploadArea = document.getElementById('uploadArea');
+    const imageInput = document.getElementById('imageInput');
+    const preview = document.getElementById('preview');
+    const successMessage = document.getElementById('successMessage');
+
+    uploadArea.addEventListener('click', () => imageInput.click());
+
+    imageInput.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          preview.src = e.target.result;
+          preview.style.display = 'block';
+          successMessage.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    uploadArea.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      uploadArea.style.borderColor = '#007bff';
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+      uploadArea.style.borderColor = '#ccc';
+    });
+
+    uploadArea.addEventListener('drop', (event) => {
+      event.preventDefault();
+      uploadArea.style.borderColor = '#ccc';
+      const file = event.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          preview.src = e.target.result;
+          preview.style.display = 'block';
+          successMessage.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Convert image to PDF
+    function convertToPDF() {
+      if (!preview.src || preview.src === '#') {
+        alert('Please upload an image first.');
+        return;
+      }
+
+      const pdf = new jsPDF();
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = (preview.height * imgWidth) / preview.width;
+
+      pdf.addImage(preview.src, 'JPEG', 0, 0, imgWidth, imgHeight);
+      pdf.save('converted.pdf');
+      successMessage.style.display = 'block';
+    }
+  </script>
+</body>
+</html>
