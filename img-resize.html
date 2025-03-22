@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Resizer Tool</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    /* General Styles */
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f9;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      background: #fff;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 1.75rem;
+      margin-bottom: 1.5rem;
+      color: #007bff;
+    }
+
+    /* Upload Area */
+    .upload-area {
+      border: 2px dashed #007bff;
+      border-radius: 10px;
+      padding: 1.5rem;
+      background: #f9f9f9;
+      cursor: pointer;
+      transition: border-color 0.3s ease, background 0.3s ease;
+    }
+
+    .upload-area:hover {
+      border-color: #0056b3;
+      background: #f0f0f0;
+    }
+
+    .upload-area p {
+      margin: 0;
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    .upload-area i {
+      font-size: 2rem;
+      color: #007bff;
+      margin-bottom: 0.5rem;
+    }
+
+    /* Resize Options */
+    .resize-options {
+      margin-top: 1.5rem;
+      text-align: left;
+    }
+
+    .resize-options label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .resize-options input {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .resize-options .aspect-ratio {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .resize-options .aspect-ratio input {
+      width: auto;
+      margin-right: 0.5rem;
+    }
+
+    /* Preview Area */
+    .preview-area {
+      margin-top: 1.5rem;
+      display: none;
+    }
+
+    .preview-area img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 5px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Buttons */
+    button {
+      background: #007bff;
+      color: #fff;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 1.5rem;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 600px) {
+      .container {
+        padding: 1rem;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Image Resizer Tool</h1>
+
+    <!-- Upload Area -->
+    <div class="upload-area" id="uploadArea">
+      <i class="fas fa-upload"></i>
+      <p>Drag & drop an image or click to upload</p>
+      <input type="file" id="imageInput" accept="image/*" style="display: none;">
+    </div>
+
+    <!-- Resize Options -->
+    <div class="resize-options" id="resizeOptions">
+      <label for="width">Width (px):</label>
+      <input type="number" id="width" placeholder="Enter width">
+
+      <label for="height">Height (px):</label>
+      <input type="number" id="height" placeholder="Enter height">
+
+      <div class="aspect-ratio">
+        <input type="checkbox" id="lockAspectRatio" checked>
+        <label for="lockAspectRatio">Lock Aspect Ratio</label>
+      </div>
+    </div>
+
+    <!-- Preview Area -->
+    <div class="preview-area" id="previewArea">
+      <img id="preview" src="#" alt="Resized Image Preview">
+    </div>
+
+    <!-- Download Button -->
+    <button id="downloadButton" disabled>Download Resized Image</button>
+  </div>
+
+  <script>
+    const uploadArea = document.getElementById('uploadArea');
+    const imageInput = document.getElementById('imageInput');
+    const previewArea = document.getElementById('previewArea');
+    const preview = document.getElementById('preview');
+    const widthInput = document.getElementById('width');
+    const heightInput = document.getElementById('height');
+    const lockAspectRatio = document.getElementById('lockAspectRatio');
+    const downloadButton = document.getElementById('downloadButton');
+    let originalWidth, originalHeight;
+
+    // Upload Image
+    uploadArea.addEventListener('click', () => imageInput.click());
+
+    imageInput.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          preview.src = e.target.result;
+          previewArea.style.display = 'block';
+          downloadButton.disabled = false;
+
+          // Get original dimensions
+          const img = new Image();
+          img.src = e.target.result;
+          img.onload = () => {
+            originalWidth = img.width;
+            originalHeight = img.height;
+            widthInput.value = img.width;
+            heightInput.value = img.height;
+          };
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Resize Image
+    function resizeImage() {
+      const width = parseInt(widthInput.value);
+      const height = parseInt(heightInput.value);
+
+      if (width && height) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = width;
+        canvas.height = height;
+
+        ctx.drawImage(preview, 0, 0, width, height);
+        preview.src = canvas.toDataURL();
+      }
+    }
+
+    // Lock Aspect Ratio
+    lockAspectRatio.addEventListener('change', () => {
+      if (lockAspectRatio.checked) {
+        heightInput.value = Math.round((widthInput.value * originalHeight) / originalWidth);
+      }
+    });
+
+    widthInput.addEventListener('input', () => {
+      if (lockAspectRatio.checked) {
+        heightInput.value = Math.round((widthInput.value * originalHeight) / originalWidth);
+      }
+      resizeImage();
+    });
+
+    heightInput.addEventListener('input', () => {
+      if (lockAspectRatio.checked) {
+        widthInput.value = Math.round((heightInput.value * originalWidth) / originalHeight);
+      }
+      resizeImage();
+    });
+
+    // Download Resized Image
+    downloadButton.addEventListener('click', () => {
+      const link = document.createElement('a');
+      link.download = 'resized-image.png';
+      link.href = preview.src;
+      link.click();
+    });
+  </script>
+</body>
+</html>
